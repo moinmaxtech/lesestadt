@@ -2,8 +2,16 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lesestadt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Lese-Stadt</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2c3e50">
+    
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Lese-Stadt","short_name":"LeseStadt","display":"standalone","start_url":".","background_color":"#f0f0f0","theme_color":"#2c3e50","orientation":"portrait"}'>
+
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -20,6 +28,9 @@
             margin: 0; height: 100vh; background: #f0f0f0; 
             font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; overflow: hidden; 
             user-select: none; -webkit-user-select: none;
+            /* Safe Area for iPhones with Notch */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         input, textarea, button, select { 
@@ -246,7 +257,7 @@
             <button class="btn-reset" onclick="app.reset()">⚠️ ALLES LÖSCHEN</button>
         </div>
 
-        <div class="version-info">Lese-Stadt v171.0</div>
+        <div class="version-info">Lese-Stadt v172.0</div>
     </div>
 
     <div id="sorter-modal" style="display:none;"></div>
@@ -295,7 +306,7 @@ const app = {
 
     init() {
         try {
-            const saved = localStorage.getItem('LeseStadt_v171');
+            const saved = localStorage.getItem('LeseStadt_v172');
             if(saved) {
                 this.state = JSON.parse(saved);
                 if(this.state.settings.showCars === undefined) this.state.settings.showCars = true;
@@ -865,8 +876,8 @@ const app = {
         
         alert("Gespeichert");
     },
-    save() { localStorage.setItem('LeseStadt_v171', JSON.stringify(this.state)); },
-    reset() { if(confirm("ALLES löschen?")) { localStorage.removeItem('LeseStadt_v171'); location.reload(); } },
+    save() { localStorage.setItem('LeseStadt_v172', JSON.stringify(this.state)); },
+    reset() { if(confirm("ALLES löschen?")) { localStorage.removeItem('LeseStadt_v172'); location.reload(); } },
     loadDefaults() { if(confirm("Überschreiben?")) { this.state = JSON.parse(JSON.stringify(USER_DATA)); this.save(); location.reload(); }},
     loadBackup() { try { this.state = JSON.parse(document.getElementById('inp-backup').value); this.save(); location.reload(); } catch(e) { alert("Fehler"); } },
     copyBackup() { navigator.clipboard.writeText(JSON.stringify(this.state)); alert("Kopiert"); }
