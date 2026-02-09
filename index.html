@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lesestadt</title>
+    <title>Lese-Stadt v171 - Touch Zoom</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -16,19 +16,17 @@
         /* GLOBAL RESET & TOUCH FIXES */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        /* Prevent text selection only where needed to allow inputs to work */
         body { 
             margin: 0; height: 100vh; background: #f0f0f0; 
             font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; overflow: hidden; 
             user-select: none; -webkit-user-select: none;
         }
 
-        /* Crucial for Android: Allow interaction with inputs and buttons */
         input, textarea, button, select { 
             user-select: text !important; 
             -webkit-user-select: text !important;
             pointer-events: auto !important; 
-            touch-action: manipulation; /* Fixes slow tap delay */
+            touch-action: manipulation; 
         }
 
         /* CONTENT */
@@ -81,7 +79,11 @@
 
         /* STADT */
         #p-city { padding: 0; overflow: hidden; position: relative; background: transparent; }
-        #viewport { width: 100%; height: 100%; cursor: grab; position: relative; overflow: hidden; touch-action: none; z-index: 5; }
+        #viewport { 
+            width: 100%; height: 100%; cursor: grab; position: relative; overflow: hidden; 
+            touch-action: none; /* WICHTIG FÜR PINCH ZOOM */
+            z-index: 5; 
+        }
         #viewport:active { cursor: grabbing; }
         #camera { position: absolute; left: 50%; top: 50%; transform-style: preserve-3d; will-change: transform; }
 
@@ -192,7 +194,7 @@
     </div>
 
     <div id="p-cal" class="page">
-        <h3>Schlüsselbund</h3>
+        <h3>Ticket-Sammlung</h3>
         <div id="key-grid" class="key-container"></div>
         
         <div class="nav-header" style="margin-top:20px;">
@@ -244,7 +246,7 @@
             <button class="btn-reset" onclick="app.reset()">⚠️ ALLES LÖSCHEN</button>
         </div>
 
-        <div class="version-info">Lese-Stadt v170.0</div>
+        <div class="version-info">Lese-Stadt v171.0</div>
     </div>
 
     <div id="sorter-modal" style="display:none;"></div>
@@ -293,7 +295,7 @@ const app = {
 
     init() {
         try {
-            const saved = localStorage.getItem('LeseStadt_v170');
+            const saved = localStorage.getItem('LeseStadt_v171');
             if(saved) {
                 this.state = JSON.parse(saved);
                 if(this.state.settings.showCars === undefined) this.state.settings.showCars = true;
@@ -307,6 +309,7 @@ const app = {
             }
             if(!this.state.tickets) this.state.tickets = [];
             
+            // TIMER INIT
             if(this.state.settings.timer) {
                 this.timer.left = this.state.settings.timer * 60;
             } else {
@@ -374,7 +377,11 @@ const app = {
                     clearInterval(this.timer.obj);
                     this.timer.running = false;
                     this.updateUI();
-                    alert("Zeit abgelaufen!"); 
+                    
+                    // AUTO FINISH
+                    this.toggleDay();
+                    alert("Zeit abgelaufen! Einheit wurde erfasst.");
+                    
                     return;
                 }
                 
@@ -390,15 +397,12 @@ const app = {
         const isToday = dateStr === new Date().toLocaleDateString();
 
         if (hasRead) {
-            // UNDO (Removes from history)
+            // UNDO
             this.state.history = this.state.history.filter(d => d !== dateStr);
-            // Reduce global progress if undid something
             if (this.state.progress > 0) this.state.progress--;
         } else {
-            // DO (Add to history + Catchup Logic)
+            // DO
             this.state.history.push(dateStr);
-            
-            // ALWAYS increment current progress (Catchup logic)
             this.state.progress++;
             
             if (this.state.progress >= this.state.settings.goal) {
@@ -665,7 +669,7 @@ const app = {
         this.state.tickets.forEach((t, i) => {
             const el = document.createElement('div');
             el.className = 'key-item ' + (t.used?'used':'');
-            el.innerHTML = '🗝️';
+            el.innerHTML = '🎫';
             if(!t.used) el.onclick = () => { if(confirm('Einlösen?')) { this.state.tickets[i].used=true; this.save(); this.renderLogbook(); }};
             k.appendChild(el);
         });
@@ -711,7 +715,7 @@ const app = {
             
             let html = `<span>${i}</span>`;
             if(hasKey) {
-                html += `<div class="day-content">🗝️</div>`;
+                html += `<div class="day-content">🎫</div>`;
             }
             
             d.innerHTML = html;
@@ -723,39 +727,69 @@ const app = {
         const vp = document.getElementById('viewport');
         let isDown=false, lx, ly;
         
-        // Android-friendly Event Binding
-        const startDrag = (e) => {
-            // IGNORE IF CLICKED ON A BUTTON OR INPUT
-            if (e.target.closest('button') || e.target.closest('input')) return;
-            
-            isDown = true;
-            lx = e.touches ? e.touches[0].clientX : e.clientX;
-            ly = e.touches ? e.touches[0].clientY : e.clientY;
-        };
-
-        const moveDrag = (e) => {
-            if (!isDown) return;
-            const cx = e.touches ? e.touches[0].clientX : e.clientX;
-            const cy = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            this.state.cam.x += cx - lx;
-            this.state.cam.y += cy - ly;
-            lx = cx; 
-            ly = cy;
-            this.updateCam();
-        };
-
-        const endDrag = () => { isDown = false; };
-
-        // Mouse
-        vp.onmousedown = startDrag;
-        window.onmouseup = endDrag;
-        window.onmousemove = moveDrag;
+        // ZOOM VARS
+        let initialPinchDist = null;
+        let initialZoom = 1;
         
-        // Touch
-        vp.ontouchstart = startDrag;
+        // Touch Handler
+        vp.ontouchstart = e => {
+            // IGNORE IF BUTTON
+            if (e.target.closest('button') || e.target.closest('input')) return;
+
+            if (e.touches.length === 2) {
+                // PINCH START
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                initialPinchDist = Math.sqrt(dx*dx + dy*dy);
+                initialZoom = this.state.cam.zoom;
+            } else {
+                // DRAG START
+                isDown = true;
+                lx = e.touches[0].clientX;
+                ly = e.touches[0].clientY;
+            }
+        };
+
+        vp.ontouchmove = e => {
+            if (e.touches.length === 2 && initialPinchDist) {
+                // PINCH MOVE
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const currentDist = Math.sqrt(dx*dx + dy*dy);
+                
+                const scale = currentDist / initialPinchDist;
+                this.state.cam.zoom = Math.max(0.2, Math.min(initialZoom * scale, 3));
+                this.updateCam();
+            } else if (isDown) {
+                // DRAG MOVE
+                const cx = e.touches[0].clientX;
+                const cy = e.touches[0].clientY;
+                this.state.cam.x += cx - lx;
+                this.state.cam.y += cy - ly;
+                lx = cx; 
+                ly = cy;
+                this.updateCam();
+            }
+        };
+
+        const endDrag = () => { isDown = false; initialPinchDist = null; };
+
+        // Mouse (PC Fallback)
+        vp.onmousedown = e => { 
+            if(e.target.closest('button')) return;
+            isDown = true; lx = e.clientX; ly = e.clientY; 
+        };
+        window.onmouseup = endDrag;
         window.ontouchend = endDrag;
-        vp.ontouchmove = moveDrag;
+        
+        window.onmousemove = e => { 
+            if(isDown) { 
+                this.state.cam.x += e.clientX-lx; 
+                this.state.cam.y += e.clientY-ly; 
+                lx=e.clientX; ly=e.clientY; 
+                this.updateCam(); 
+            }
+        };
         
         vp.addEventListener('wheel', e => { e.preventDefault(); this.state.cam.zoom = Math.max(0.2, Math.min(this.state.cam.zoom + (e.deltaY > 0 ? -0.1 : 0.1), 3)); this.updateCam(); });
     },
@@ -831,8 +865,8 @@ const app = {
         
         alert("Gespeichert");
     },
-    save() { localStorage.setItem('LeseStadt_v170', JSON.stringify(this.state)); },
-    reset() { if(confirm("ALLES löschen?")) { localStorage.removeItem('LeseStadt_v170'); location.reload(); } },
+    save() { localStorage.setItem('LeseStadt_v171', JSON.stringify(this.state)); },
+    reset() { if(confirm("ALLES löschen?")) { localStorage.removeItem('LeseStadt_v171'); location.reload(); } },
     loadDefaults() { if(confirm("Überschreiben?")) { this.state = JSON.parse(JSON.stringify(USER_DATA)); this.save(); location.reload(); }},
     loadBackup() { try { this.state = JSON.parse(document.getElementById('inp-backup').value); this.save(); location.reload(); } catch(e) { alert("Fehler"); } },
     copyBackup() { navigator.clipboard.writeText(JSON.stringify(this.state)); alert("Kopiert"); }
