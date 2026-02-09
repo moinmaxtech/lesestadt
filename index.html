@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lese-Stadt v169 - Settings Overhaul</title>
+    <title>Lesestadt</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -12,10 +12,24 @@
             --bg-world: #87CEEB;
             --iso-w: 132px; --iso-h: 66px;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-        input, textarea, button, select { user-select: auto !important; pointer-events: auto !important; }
+        
+        /* GLOBAL RESET & TOUCH FIXES */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        /* Prevent text selection only where needed to allow inputs to work */
+        body { 
+            margin: 0; height: 100vh; background: #f0f0f0; 
+            font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; overflow: hidden; 
+            user-select: none; -webkit-user-select: none;
+        }
 
-        body { margin: 0; height: 100vh; background: #f0f0f0; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; overflow: hidden; }
+        /* Crucial for Android: Allow interaction with inputs and buttons */
+        input, textarea, button, select { 
+            user-select: text !important; 
+            -webkit-user-select: text !important;
+            pointer-events: auto !important; 
+            touch-action: manipulation; /* Fixes slow tap delay */
+        }
 
         /* CONTENT */
         #content { flex: 1; position: relative; overflow: hidden; background: var(--bg-world); }
@@ -230,7 +244,7 @@
             <button class="btn-reset" onclick="app.reset()">⚠️ ALLES LÖSCHEN</button>
         </div>
 
-        <div class="version-info">Lese-Stadt v169.0</div>
+        <div class="version-info">Lese-Stadt v170.0</div>
     </div>
 
     <div id="sorter-modal" style="display:none;"></div>
@@ -279,13 +293,11 @@ const app = {
 
     init() {
         try {
-            const saved = localStorage.getItem('LeseStadt_v169');
+            const saved = localStorage.getItem('LeseStadt_v170');
             if(saved) {
                 this.state = JSON.parse(saved);
-                // SET DEFAULTS FOR NEW SETTINGS
                 if(this.state.settings.showCars === undefined) this.state.settings.showCars = true;
                 
-                // Enforce Physics
                 this.state.settings.laneSE = -20;
                 this.state.settings.laneSW = -160; 
                 this.state.settings.carSpeed = 2;
@@ -295,7 +307,6 @@ const app = {
             }
             if(!this.state.tickets) this.state.tickets = [];
             
-            // TIMER INIT
             if(this.state.settings.timer) {
                 this.timer.left = this.state.settings.timer * 60;
             } else {
@@ -307,7 +318,6 @@ const app = {
 
             this.initInput();
             
-            // Update checkbox state in UI
             const chkTraffic = document.getElementById('chk-traffic');
             if(chkTraffic) chkTraffic.checked = this.state.settings.showCars;
 
@@ -537,7 +547,6 @@ const app = {
     forceSpawnCar(isManual = true) {
         // TRAFFIC TOGGLE CHECK
         if (!this.state.settings.showCars) {
-            // Remove existing cars
             document.querySelectorAll('.car').forEach(c => c.remove());
             return;
         }
@@ -648,6 +657,7 @@ const app = {
         requestAnimationFrame(animate);
     },
 
+    // --- RENDER LOGBOOK ---
     renderLogbook() {
         const k = document.getElementById('key-grid'); 
         if(!k) return;
@@ -712,13 +722,40 @@ const app = {
     initInput() {
         const vp = document.getElementById('viewport');
         let isDown=false, lx, ly;
-        vp.onmousedown = e => { if(e.target.tagName!=='INPUT' && e.target.tagName!=='BUTTON') { isDown=true; lx=e.clientX; ly=e.clientY; }};
-        window.onmouseup = () => isDown=false;
-        window.onmousemove = e => { if(isDown) { this.state.cam.x += e.clientX-lx; this.state.cam.y += e.clientY-ly; lx=e.clientX; ly=e.clientY; this.updateCam(); }};
         
-        vp.ontouchstart = e => { if(e.target.tagName!=='INPUT' && e.target.tagName!=='BUTTON') { isDown=true; lx=e.touches[0].clientX; ly=e.touches[0].clientY; }};
-        window.ontouchend = () => isDown=false;
-        vp.ontouchmove = e => { if(isDown) { this.state.cam.x += e.touches[0].clientX-lx; this.state.cam.y += e.touches[0].clientY-ly; lx=e.touches[0].clientX; ly=e.touches[0].clientY; this.updateCam(); }};
+        // Android-friendly Event Binding
+        const startDrag = (e) => {
+            // IGNORE IF CLICKED ON A BUTTON OR INPUT
+            if (e.target.closest('button') || e.target.closest('input')) return;
+            
+            isDown = true;
+            lx = e.touches ? e.touches[0].clientX : e.clientX;
+            ly = e.touches ? e.touches[0].clientY : e.clientY;
+        };
+
+        const moveDrag = (e) => {
+            if (!isDown) return;
+            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            this.state.cam.x += cx - lx;
+            this.state.cam.y += cy - ly;
+            lx = cx; 
+            ly = cy;
+            this.updateCam();
+        };
+
+        const endDrag = () => { isDown = false; };
+
+        // Mouse
+        vp.onmousedown = startDrag;
+        window.onmouseup = endDrag;
+        window.onmousemove = moveDrag;
+        
+        // Touch
+        vp.ontouchstart = startDrag;
+        window.ontouchend = endDrag;
+        vp.ontouchmove = moveDrag;
         
         vp.addEventListener('wheel', e => { e.preventDefault(); this.state.cam.zoom = Math.max(0.2, Math.min(this.state.cam.zoom + (e.deltaY > 0 ? -0.1 : 0.1), 3)); this.updateCam(); });
     },
@@ -788,15 +825,14 @@ const app = {
         this.state.settings.showCars = document.getElementById('chk-traffic').checked;
         this.save(); 
         
-        // Apply traffic change immediately if needed
         if(!this.state.settings.showCars) {
              document.querySelectorAll('.car').forEach(c => c.remove());
         }
         
         alert("Gespeichert");
     },
-    save() { localStorage.setItem('LeseStadt_v169', JSON.stringify(this.state)); },
-    reset() { if(confirm("ALLES löschen?")) { localStorage.removeItem('LeseStadt_v169'); location.reload(); } },
+    save() { localStorage.setItem('LeseStadt_v170', JSON.stringify(this.state)); },
+    reset() { if(confirm("ALLES löschen?")) { localStorage.removeItem('LeseStadt_v170'); location.reload(); } },
     loadDefaults() { if(confirm("Überschreiben?")) { this.state = JSON.parse(JSON.stringify(USER_DATA)); this.save(); location.reload(); }},
     loadBackup() { try { this.state = JSON.parse(document.getElementById('inp-backup').value); this.save(); location.reload(); } catch(e) { alert("Fehler"); } },
     copyBackup() { navigator.clipboard.writeText(JSON.stringify(this.state)); alert("Kopiert"); }
