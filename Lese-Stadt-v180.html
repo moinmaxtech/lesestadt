@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Lese-Stadt</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2c3e50">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🏙️</text></svg>">
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a1a2e;
+            --primary-light: #16213e;
+            --accent: #0f3460;
+            --action: #533483;
+            --action-hover: #6b4297;
+            --success: #00d9a0;
+            --success-hover: #00c290;
+            --warning: #ffa500;
+            --danger: #e94560;
+            --ui-bg: #ffffff;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-world: linear-gradient(180deg, #87CEEB 0%, #b5dff5 100%);
+            --text-primary: #1a1a2e;
+            --text-secondary: #6c757d;
+            --text-light: #adb5bd;
+            --border-color: #e9ecef;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --shadow-xl: 0 12px 48px rgba(0,0,0,0.15);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --iso-w: 132px; 
+            --iso-h: 66px;
+        }
+        
+        /* GLOBAL RESET & MODERN DEFAULTS */
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            margin: 0;
+            padding: 0;
+        }
+        
+        body { 
+            height: 100vh; 
+            background: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            user-select: none; 
+            -webkit-user-select: none;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        input, textarea, button, select { 
+            user-select: text !important; 
+            -webkit-user-select: text !important;
+            pointer-events: auto !important; 
+            touch-action: manipulation;
+            font-family: inherit;
+        }
+
+        /* CONTENT */
+        #content { 
+            flex: 1; 
+            position: relative; 
+            overflow: hidden; 
+            background: var(--bg-world); 
+        }
+        
+        .page { 
+            display: none; 
+            width: 100%; 
+            height: 100%; 
+            overflow-y: auto; 
+            padding: 24px 16px 100px; 
+        }
+        
+        .page.active { display: block; }
+        
+        /* LESEN PAGE */
+        #p-focus.active { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            text-align: center; 
+            position: relative; 
+            z-index: 10; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 24px 20px 20px;
+        }
+        
+        /* MODERN HEADER */
+        .nav-header {
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-md);
+            flex-shrink: 0;
+        }
+        
+        .nav-header button {
+            background: linear-gradient(135deg, var(--action) 0%, var(--action-hover) 100%);
+            border: none; 
+            font-size: 18px; 
+            color: white;
+            cursor: pointer; 
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .nav-header button:active {
+            transform: scale(0.95);
+        }
+        
+        .nav-header button:disabled { 
+            background: #e9ecef;
+            color: #adb5bd; 
+            cursor: default; 
+            box-shadow: none;
+        }
+        
+        .nav-title { 
+            font-size: 18px; 
+            font-weight: 700; 
+            color: var(--primary);
+            letter-spacing: -0.3px;
+        }
+
+        /* MODERN TIMER */
+        #timer-box { 
+            transition: opacity 0.3s; 
+            margin-bottom: 24px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-xl);
+            padding: 32px 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        #timer-box.hidden { display: none; }
+        
+        #timer-display { 
+            font-size: 72px; 
+            font-weight: 300; 
+            color: white; 
+            margin: 0;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -2px;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        
+        /* MODERN PROGRESS */
+        .progress-section { 
+            margin-bottom: 24px; 
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .progress-section > div:first-child {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+        
+        .progress-bar { 
+            width: 100%; 
+            height: 12px; 
+            background: #e9ecef;
+            border-radius: 100px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .progress-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--success) 0%, #00efc8 100%);
+            width: 0%; 
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: block;
+            border-radius: 100px;
+            box-shadow: 0 0 12px rgba(0, 217, 160, 0.5);
+        }
+        
+        /* MODERN BUTTONS */
+        .controls-spacer { flex: 1; min-height: 20px; } 
+        .controls-area { padding-bottom: 20px; flex-shrink: 0; }
+
+        .btn-main { 
+            background: linear-gradient(135deg, var(--success) 0%, var(--success-hover) 100%);
+            color: white; 
+            border: none; 
+            padding: 18px 24px;
+            font-size: 16px; 
+            font-weight: 700; 
+            border-radius: var(--radius-lg);
+            width: 100%; 
+            cursor: pointer; 
+            margin-bottom: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 217, 160, 0.3);
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 217, 160, 0.4);
+        }
+        
+        .btn-main:active { 
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 217, 160, 0.3);
+        }
+        
+        .btn-main.done { 
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+        
+        .btn-main.pause { 
+            background: linear-gradient(135deg, var(--warning) 0%, #ff8c00 100%);
+            box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+            color: white;
+        }
+        
+        /* Utility */
+        .d-none { display: none !important; }
+
+        /* STADT */
+        #p-city { 
+            padding: 0; 
+            overflow: hidden; 
+            position: relative; 
+            background: var(--bg-world);
+        }
+        
+        #viewport { 
+            width: 100%; 
+            height: 100%; 
+            cursor: grab; 
+            position: relative; 
+            overflow: hidden; 
+            touch-action: none;
+            z-index: 5; 
+        }
+        
+        #viewport:active { cursor: grabbing; }
+        
+        #camera { 
+            position: absolute; 
+            left: 50%; 
+            top: 50%; 
+            transform-style: preserve-3d; 
+            will-change: transform; 
+        }
+
+        .iso-obj { 
+            position: absolute; 
+            pointer-events: none; 
+            background-repeat: no-repeat; 
+            transform-origin: bottom center; 
+            image-rendering: pixelated;
+            backface-visibility: hidden; 
+        }
+        
+        /* PREVIEW BUILDING */
+        .preview-building {
+            opacity: 0.7;
+            filter: brightness(1.15);
+        }
+        
+        .preview-part {
+            transition: clip-path 0.4s ease-out;
+        }
+        
+        .car {
+            position: absolute; 
+            pointer-events: none; 
+            z-index: 9000;
+            background-image: url('https://raw.githubusercontent.com/moinmaxtech/lesestadt/main/sheet_allCars.png');
+            image-rendering: pixelated;
+            transform-origin: center bottom;
+            will-change: transform;
+        }
+
+        .sheet-buildings { 
+            background-image: url('https://raw.githubusercontent.com/moinmaxtech/lesestadt/main/buildingTiles_sheet.png'); 
+        }
+        
+        .sheet-city { 
+            background-image: url('https://raw.githubusercontent.com/moinmaxtech/lesestadt/main/cityTiles_sheet.png'); 
+        }
+        
+        .grid-tile {
+            position: absolute; 
+            width: var(--iso-w); 
+            height: var(--iso-h);
+            margin-left: calc(var(--iso-w) / -2); 
+            margin-top: calc(var(--iso-h) / -2);
+            background-image: url("data:image/svg+xml,%3Csvg width='132' height='66' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M66 0 L132 33 L66 66 L0 33 Z' fill='rgba(255,255,255,0.1)' stroke='rgba(255,255,255,0.4)' stroke-width='1'/%3E%3C/svg%3E");
+        }
+        
+        .grid-tile.grass {
+            background-image: url("data:image/svg+xml,%3Csvg width='132' height='66' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M66 0 L132 33 L66 66 L0 33 Z' fill='rgba(100, 200, 100, 0.6)' stroke='rgba(255,255,255,0.3)' stroke-width='1'/%3E%3C/svg%3E");
+        }
+        
+        /* CITY CONTROLS */
+        .city-info {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .city-controls {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-city-control {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: var(--radius-lg);
+            padding: 12px 16px;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        
+        .btn-city-control:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .btn-city-control:active {
+            transform: translateY(0);
+        }
+        
+        /* CONFETTI */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+        }
+
+        /* LOGBUCH */
+
+        /* CALENDAR */
+        .calendar-container {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 20px;
+        }
+        
+        .cal-weekdays { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 8px; 
+            margin-bottom: 12px; 
+            text-align: center; 
+            font-size: 12px; 
+            font-weight: 700; 
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .cal-grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 8px; 
+        }
+        
+        .cal-day { 
+            aspect-ratio: 1; 
+            background: #f8f9fa; 
+            border: 2px solid transparent; 
+            border-radius: var(--radius-md); 
+            position: relative; 
+            overflow: hidden;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            transition: all 0.2s;
+            cursor: default;
+        }
+        
+        .cal-day.empty { 
+            background: transparent; 
+            border: none; 
+        }
+        
+        .cal-day span { 
+            position: absolute; 
+            top: 4px; 
+            right: 6px; 
+            font-size: 11px; 
+            color: var(--text-light); 
+            z-index: 2;
+            font-weight: 700;
+        }
+        
+        .cal-day.today { 
+            border: 2px solid var(--action);
+            box-shadow: 0 0 0 4px rgba(83, 52, 131, 0.15);
+        }
+        
+        .cal-day.today span { 
+            color: var(--action); 
+            font-weight: 800; 
+        }
+        
+        .cal-day.read { 
+            background: linear-gradient(135deg, var(--success) 0%, var(--success-hover) 100%);
+            border-color: var(--success);
+            box-shadow: 0 2px 8px rgba(0, 217, 160, 0.3);
+        }
+        
+        .cal-day.read span { 
+            color: white;
+        }
+        
+        .cal-day.read.today {
+            border-color: var(--action);
+            box-shadow: 0 0 0 4px rgba(83, 52, 131, 0.15), 0 2px 8px rgba(0, 217, 160, 0.3);
+        }
+        
+        .day-content { 
+            font-size: 20px; 
+            line-height: 1; 
+            z-index: 1; 
+        }
+        
+        /* STATISTICS */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 800;
+            background: var(--bg-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 10px 0;
+            letter-spacing: -1px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+        
+        .stat-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+        
+        /* TICKETS */
+        .tickets-section {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 20px;
+        }
+        
+        .tickets-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .tickets-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+        
+        .tickets-count {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: #f8f9fa;
+            padding: 6px 14px;
+            border-radius: 100px;
+        }
+        
+        .tickets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 12px;
+        }
+        
+        .ticket-item {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, var(--warning) 0%, #ff8c00 100%);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ticket-item::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg);
+        }
+        
+        .ticket-item:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(255, 165, 0, 0.4);
+        }
+        
+        .ticket-item:active {
+            transform: translateY(-2px) scale(1.02);
+        }
+        
+        .ticket-item.used {
+            background: #e9ecef;
+            box-shadow: none;
+            cursor: default;
+            opacity: 0.6;
+        }
+        
+        .ticket-item.used:hover {
+            transform: none;
+        }
+        
+        .ticket-emoji {
+            font-size: 32px;
+            margin-bottom: 6px;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+        }
+        
+        .ticket-date {
+            font-size: 10px;
+            color: var(--text-primary);
+            font-weight: 700;
+            background: rgba(255,255,255,0.95);
+            padding: 3px 8px;
+            border-radius: 100px;
+        }
+        
+        .ticket-item.used .ticket-date {
+            background: rgba(0,0,0,0.1);
+            color: var(--text-light);
+        }
+        
+        .no-tickets {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .no-tickets-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* SETUP STYLES */
+        .set-group { 
+            background: white; 
+            padding: 20px; 
+            border-radius: var(--radius-lg); 
+            margin-bottom: 16px; 
+            box-shadow: var(--shadow-md);
+        }
+        
+        .set-group h3 { 
+            margin: 0 0 16px 0; 
+            color: var(--text-primary); 
+            font-size: 18px; 
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .set-row { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 16px; 
+        }
+        
+        .set-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .set-row label { 
+            font-weight: 600; 
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .set-row input[type="number"] { 
+            width: 70px; 
+            padding: 10px 12px; 
+            border: 2px solid var(--border-color); 
+            border-radius: var(--radius-md); 
+            text-align: center;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        
+        .set-row input[type="number"]:focus {
+            outline: none;
+            border-color: var(--action);
+            box-shadow: 0 0 0 3px rgba(83, 52, 131, 0.1);
+        }
+        
+        .set-row input[type="checkbox"] { 
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+        
+        .btn-save {
+            background: linear-gradient(135deg, var(--action) 0%, var(--action-hover) 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-weight: 700;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(83, 52, 131, 0.3);
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            margin-bottom: 0;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(83, 52, 131, 0.4);
+        }
+        
+        .btn-save:active {
+            transform: translateY(0);
+        }
+        
+        .btn-backup {
+            background: white;
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+            padding: 12px;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .btn-backup:hover {
+            border-color: var(--action);
+            color: var(--action);
+        }
+        
+        textarea {
+            width: 100%;
+            height: 80px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            margin-bottom: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            font-size: 12px;
+            resize: vertical;
+            transition: all 0.2s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--action);
+            box-shadow: 0 0 0 3px rgba(83, 52, 131, 0.1);
+        }
+        
+        textarea::placeholder {
+            color: var(--text-light);
+        }
+        
+        .btn-reset { 
+            background: linear-gradient(135deg, var(--danger) 0%, #c44257 100%);
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            font-weight: 700; 
+            border-radius: var(--radius-lg); 
+            width: 100%; 
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
+        }
+        
+        .btn-reset:active {
+            transform: translateY(0);
+        }
+        
+        .version-info { 
+            text-align: center; 
+            color: var(--text-light); 
+            font-size: 11px; 
+            margin-top: 24px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .offline-indicator {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--warning) 0%, #ff8c00 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 700;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(255, 165, 0, 0.4);
+        }
+        
+        .offline-indicator.show { 
+            display: block; 
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        /* NAVIGATION */
+        nav { 
+            height: 70px; 
+            background: white; 
+            border-top: 1px solid var(--border-color); 
+            flex-shrink: 0; 
+            display: flex; 
+            z-index: 200; 
+            position: fixed; 
+            bottom: 0; 
+            width: 100%;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .nav-btn { 
+            flex: 1; 
+            border: none; 
+            background: transparent; 
+            color: var(--text-light); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 11px; 
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            gap: 4px;
+            position: relative;
+        }
+        
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background: var(--bg-gradient);
+            border-radius: 0 0 3px 3px;
+            transition: width 0.3s;
+        }
+        
+        .nav-btn.active::before {
+            width: 50%;
+        }
+        
+        .nav-btn.active { 
+            color: var(--action);
+            font-weight: 700;
+        }
+        
+        .nav-btn span { 
+            font-size: 24px; 
+            transition: transform 0.2s;
+        }
+        
+        .nav-btn.active span {
+            transform: scale(1.1);
+        }
+        
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+<div id="offline-indicator" class="offline-indicator">📶 Offline-Modus</div>
+
+<main id="content">
+    
+    <div id="p-focus" class="page active">
+        <div class="nav-header">
+            <button onclick="app.changeViewDate(-1)">◀</button>
+            <span id="date-display" class="nav-title">Heute</span>
+            <button id="btn-next-day" onclick="app.changeViewDate(1)" disabled>▶</button>
+        </div>
+
+        <div id="timer-box">
+            <div id="timer-display">10:00</div>
+        </div>
+
+        <div class="progress-section">
+            <div>Fortschritt: <span id="ui-prog">0</span> / <span id="ui-goal">3</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="prog-bar"></div></div>
+        </div>
+        
+        <div class="controls-spacer"></div>
+        
+        <div class="controls-area">
+            <button id="btn-timer" class="btn-main" onclick="app.toggleTimer()">Timer starten</button>
+            <div id="wake-lock-hint" style="font-size:12px; color: rgba(255,255,255,0.9); margin-bottom:12px; display:none; background: rgba(255,255,255,0.15); padding: 10px; border-radius: var(--radius-md); font-weight: 600; backdrop-filter: blur(10px);">
+                🔋 Screen bleibt aktiv
+            </div>
+            <button id="btn-action" class="btn-main" onclick="app.toggleDay()">Einheit erfassen</button>
+            <div id="action-hint" style="font-size:12px; color: rgba(255,255,255,0.7); font-weight: 500;">(Tippe erneut zum Rückgängig machen)</div>
+        </div>
+    </div>
+
+    <div id="p-city" class="page">
+        <div class="city-info">
+            <span>🏠</span>
+            <span id="ui-count" style="font-weight: 800;">0</span>
+            <span style="color: var(--text-secondary); font-weight: 600;">Häuser</span>
+        </div>
+        <div class="city-controls">
+            <button class="btn-city-control" onclick="app.centerView()">
+                🎯
+            </button>
+            <button class="btn-city-control" onclick="app.toggleFullscreen()">
+                <span id="fullscreen-icon">⛶</span>
+            </button>
+        </div>
+        <div id="viewport">
+            <div id="camera"></div>
+        </div>
+    </div>
+
+    <div id="p-cal" class="page">
+        <!-- Kalender -->
+        <div class="calendar-container">
+            <div class="nav-header" style="margin-bottom: 12px;">
+                <button onclick="app.changeMonth(-1)">◀</button>
+                <span id="cal-month-display" class="nav-title">Monat</span>
+                <button onclick="app.changeMonth(1)">▶</button>
+            </div>
+            
+            <div class="cal-weekdays">
+                <div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
+            </div>
+            <div id="cal-grid" class="cal-grid"></div>
+        </div>
+        
+        <!-- Statistiken -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-value" id="stat-days">0</div>
+                <div class="stat-label">Tage gelesen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value" id="stat-time">0h</div>
+                <div class="stat-label">Gesamtzeit</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏠</div>
+                <div class="stat-value" id="stat-buildings">0</div>
+                <div class="stat-label">Häuser gebaut</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value" id="stat-used-tickets">0</div>
+                <div class="stat-label">Tickets eingelöst</div>
+            </div>
+        </div>
+        
+        <!-- Offene Tickets -->
+        <div class="tickets-section">
+            <div class="tickets-header">
+                <div class="tickets-title">🎫 Deine Tickets</div>
+                <div class="tickets-count" id="tickets-count">0 offen</div>
+            </div>
+            <div id="tickets-grid" class="tickets-grid"></div>
+        </div>
+    </div>
+
+    <div id="p-set" class="page">
+        
+        <div class="set-group">
+            <h3>Ziele & Zeit</h3>
+            <div class="set-row">
+                <label>Tagesziel (Einheiten)</label>
+                <input type="number" id="inp-goal" value="3" min="1" max="10">
+            </div>
+            <div class="set-row">
+                <label>Timer (Minuten)</label>
+                <input type="number" id="inp-time" value="10" min="1" max="120">
+            </div>
+            <button class="btn-save" onclick="app.saveSettings()">Speichern</button>
+        </div>
+
+        <div class="set-group">
+            <h3>Darstellung</h3>
+            <div class="set-row">
+                <label>Verkehr anzeigen</label>
+                <input type="checkbox" id="chk-traffic" onchange="app.saveSettings()">
+            </div>
+        </div>
+
+        <div class="set-group">
+            <h3>Datenverwaltung</h3>
+            <textarea id="inp-backup" placeholder="Backup-Code hier einfügen..."></textarea>
+            <div style="display:flex; gap:10px;">
+                <button onclick="app.loadBackup()" class="btn-backup" style="flex:1;">Laden</button>
+                <button onclick="app.copyBackup()" class="btn-backup" style="flex:1;">Kopieren</button>
+            </div>
+        </div>
+
+        <div class="set-group" style="border:2px solid var(--danger);">
+            <h3 style="color:var(--danger);">Danger Zone</h3>
+            <button class="btn-reset" onclick="app.reset()">⚠️ Alles löschen</button>
+        </div>
+
+        <div class="version-info">Lese-Stadt v180.0 - Modernes Design</div>
+    </div>
+
+</main>
+
+<nav>
+    <button class="nav-btn active" onclick="app.tab('p-focus', this)"><span>📖</span>Lesen</button>
+    <button class="nav-btn" onclick="app.tab('p-city', this)"><span>🏙️</span>Stadt</button>
+    <button class="nav-btn" onclick="app.tab('p-cal', this)"><span>🎫</span>Logbuch</button>
+    <button class="nav-btn" onclick="app.tab('p-set', this)"><span>⚙️</span>Setup</button>
+</nav>
+
+<script>
+// SERVICE WORKER REGISTRATION
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('✅ Service Worker registriert'))
+            .catch(err => console.log('❌ Service Worker Fehler:', err));
+    });
+}
+
+// OFFLINE INDICATOR
+window.addEventListener('online', () => {
+    document.getElementById('offline-indicator').classList.remove('show');
+});
+window.addEventListener('offline', () => {
+    document.getElementById('offline-indicator').classList.add('show');
+});
+
+// --- CORE DATA ---
+const USER_DATA = {"buildings":[],"tickets":[],"history":[],"settings":{"goal":3,"timer":10,"baseH":77,"floorH":34,"roofH":-1,"globalY":8,"carY":-20,"laneSE":-20,"laneSW":-160,"carSpeed":2, "showCars":true},"progress":0,"cam":{"x":0,"y":0,"zoom":1},"atlasBuild":[{"x":596,"y":85,"w":99,"h":85},{"x":0,"y":1270,"w":133,"h":127},{"x":0,"y":1905,"w":132,"h":127},{"x":265,"y":0,"w":132,"h":127},{"x":265,"y":127,"w":132,"h":127},{"x":596,"y":170,"w":99,"h":54},{"x":596,"y":224,"w":99,"h":54},{"x":596,"y":278,"w":99,"h":85},{"x":596,"y":363,"w":99,"h":85},{"x":265,"y":893,"w":132,"h":127},{"x":133,"y":1275,"w":132,"h":127},{"x":133,"y":1147,"w":132,"h":128},{"x":396,"y":1786,"w":132,"h":127},{"x":596,"y":766,"w":99,"h":54},{"x":396,"y":1913,"w":132,"h":127},{"x":596,"y":618,"w":99,"h":85},{"x":596,"y":533,"w":99,"h":85},{"x":265,"y":1659,"w":132,"h":127},{"x":265,"y":639,"w":132,"h":127},{"x":265,"y":381,"w":132,"h":128},{"x":133,"y":639,"w":132,"h":127},{"x":133,"y":385,"w":132,"h":127},{"x":0,"y":1397,"w":133,"h":127},{"x":596,"y":0,"w":99,"h":85},{"x":595,"y":1641,"w":99,"h":85},{"x":133,"y":0,"w":132,"h":128},{"x":133,"y":128,"w":132,"h":127},{"x":133,"y":255,"w":132,"h":130},{"x":133,"y":1659,"w":132,"h":127},{"x":265,"y":254,"w":132,"h":127},{"x":0,"y":254,"w":133,"h":127},{"x":595,"y":1230,"w":99,"h":85},{"x":595,"y":1145,"w":99,"h":85},{"x":265,"y":1020,"w":132,"h":128},{"x":133,"y":1402,"w":132,"h":127},{"x":133,"y":1529,"w":132,"h":130},{"x":0,"y":762,"w":133,"h":127},{"x":0,"y":1016,"w":133,"h":127},{"x":397,"y":434,"w":100,"h":85},{"x":497,"y":945,"w":99,"h":85},{"x":265,"y":509,"w":132,"h":130},{"x":265,"y":1148,"w":132,"h":127},{"x":0,"y":635,"w":133,"h":127},{"x":497,"y":681,"w":99,"h":85},{"x":397,"y":519,"w":100,"h":85},{"x":497,"y":536,"w":99,"h":85},{"x":265,"y":1402,"w":132,"h":130},{"x":397,"y":664,"w":100,"h":85},{"x":497,"y":329,"w":99,"h":85},{"x":397,"y":894,"w":100,"h":85},{"x":596,"y":448,"w":99,"h":85},{"x":397,"y":289,"w":100,"h":85},{"x":497,"y":60,"w":99,"h":85},{"x":397,"y":809,"w":100,"h":85},{"x":397,"y":979,"w":100,"h":85},{"x":496,"y":1632,"w":99,"h":85},{"x":397,"y":1064,"w":100,"h":85},{"x":496,"y":1511,"w":99,"h":60},{"x":496,"y":1451,"w":99,"h":60},{"x":496,"y":1391,"w":99,"h":60},{"x":496,"y":1331,"w":99,"h":60},{"x":497,"y":1030,"w":99,"h":60},{"x":496,"y":1209,"w":99,"h":60},{"x":496,"y":1149,"w":99,"h":60},{"x":497,"y":621,"w":99,"h":60},{"x":497,"y":414,"w":99,"h":61},{"x":497,"y":269,"w":99,"h":60},{"x":397,"y":749,"w":100,"h":60},{"x":497,"y":0,"w":99,"h":60},{"x":496,"y":1717,"w":99,"h":60},{"x":496,"y":1571,"w":99,"h":61},{"x":496,"y":1269,"w":99,"h":62},{"x":397,"y":374,"w":100,"h":60},{"x":397,"y":1698,"w":99,"h":60},{"x":397,"y":1209,"w":99,"h":61},{"x":397,"y":1149,"w":99,"h":60},{"x":596,"y":703,"w":99,"h":63},{"x":397,"y":1455,"w":99,"h":62},{"x":233,"y":1786,"w":13,"h":24},{"x":397,"y":227,"w":100,"h":62},{"x":397,"y":604,"w":100,"h":60},{"x":397,"y":1517,"w":99,"h":60},{"x":397,"y":1270,"w":99,"h":61},{"x":397,"y":1637,"w":99,"h":61},{"x":497,"y":206,"w":99,"h":63},{"x":0,"y":127,"w":133,"h":127},{"x":397,"y":172,"w":100,"h":55},{"x":397,"y":110,"w":100,"h":62},{"x":497,"y":145,"w":99,"h":61},{"x":397,"y":1577,"w":99,"h":60},{"x":397,"y":1331,"w":99,"h":63},{"x":397,"y":1394,"w":99,"h":61},{"x":0,"y":1778,"w":133,"h":127},{"x":265,"y":1532,"w":132,"h":127},{"x":133,"y":1786,"w":100,"h":55},{"x":133,"y":1841,"w":100,"h":55},{"x":497,"y":475,"w":99,"h":61},{"x":497,"y":766,"w":99,"h":61},{"x":497,"y":827,"w":99,"h":63},{"x":0,"y":381,"w":133,"h":127},{"x":0,"y":508,"w":133,"h":127},{"x":265,"y":766,"w":132,"h":127},{"x":397,"y":0,"w":100,"h":55},{"x":497,"y":890,"w":99,"h":55},{"x":528,"y":1777,"w":99,"h":63},{"x":528,"y":1840,"w":99,"h":61},{"x":0,"y":889,"w":133,"h":127},{"x":0,"y":1651,"w":133,"h":127},{"x":264,"y":1913,"w":132,"h":127},{"x":264,"y":1786,"w":132,"h":127},{"x":397,"y":55,"w":100,"h":55},{"x":497,"y":1090,"w":99,"h":55},{"x":528,"y":1901,"w":99,"h":63},{"x":265,"y":1275,"w":132,"h":127},{"x":0,"y":0,"w":133,"h":127},{"x":0,"y":1524,"w":133,"h":127},{"x":133,"y":893,"w":132,"h":127},{"x":133,"y":766,"w":132,"h":127},{"x":528,"y":1964,"w":99,"h":54},{"x":595,"y":1315,"w":99,"h":54},{"x":595,"y":1369,"w":99,"h":56},{"x":595,"y":1425,"w":99,"h":54},{"x":0,"y":1143,"w":133,"h":127},{"x":133,"y":1020,"w":132,"h":127},{"x":132,"y":1905,"w":132,"h":127},{"x":133,"y":512,"w":132,"h":127},{"x":595,"y":1479,"w":99,"h":54},{"x":595,"y":1533,"w":99,"h":54},{"x":595,"y":1587,"w":99,"h":54}],"atlasRoad":[{"x":398,"y":116,"w":132,"h":104},{"x":794,"y":737,"w":132,"h":101},{"x":794,"y":636,"w":132,"h":101},{"x":794,"y":535,"w":132,"h":101},{"x":794,"y":407,"w":132,"h":128},{"x":794,"y":306,"w":132,"h":101},{"x":794,"y":202,"w":132,"h":104},{"x":794,"y":101,"w":132,"h":101},{"x":133,"y":1208,"w":133,"h":101},{"x":793,"y":1929,"w":132,"h":101},{"x":793,"y":1828,"w":132,"h":101},{"x":793,"y":1700,"w":132,"h":128},{"x":793,"y":1572,"w":132,"h":128},{"x":0,"y":101,"w":133,"h":133},{"x":793,"y":1370,"w":132,"h":101},{"x":793,"y":1269,"w":132,"h":101},{"x":793,"y":1168,"w":132,"h":101},{"x":662,"y":1067,"w":132,"h":101},{"x":0,"y":234,"w":133,"h":133},{"x":0,"y":367,"w":133,"h":101},{"x":662,"y":766,"w":132,"h":101},{"x":662,"y":665,"w":132,"h":101},{"x":662,"y":564,"w":132,"h":101},{"x":662,"y":436,"w":132,"h":128},{"x":662,"y":303,"w":132,"h":133},{"x":0,"y":569,"w":133,"h":101},{"x":0,"y":769,"w":133,"h":133},{"x":662,"y":0,"w":132,"h":101},{"x":661,"y":1932,"w":132,"h":101},{"x":661,"y":1831,"w":132,"h":101},{"x":661,"y":1730,"w":132,"h":101},{"x":661,"y":1597,"w":132,"h":133},{"x":0,"y":902,"w":133,"h":101},{"x":0,"y":1003,"w":133,"h":133},{"x":661,"y":1256,"w":132,"h":127},{"x":530,"y":1155,"w":132,"h":101},{"x":530,"y":1032,"w":132,"h":123},{"x":530,"y":931,"w":132,"h":101},{"x":530,"y":830,"w":132,"h":101},{"x":530,"y":729,"w":132,"h":101},{"x":0,"y":1237,"w":133,"h":101},{"x":0,"y":1843,"w":133,"h":127},{"x":530,"y":426,"w":132,"h":101},{"x":530,"y":325,"w":132,"h":101},{"x":530,"y":202,"w":132,"h":123},{"x":530,"y":101,"w":132,"h":101},{"x":530,"y":0,"w":132,"h":101},{"x":0,"y":1439,"w":133,"h":101},{"x":0,"y":1742,"w":133,"h":101},{"x":529,"y":1722,"w":132,"h":101},{"x":529,"y":1621,"w":132,"h":101},{"x":529,"y":1520,"w":132,"h":101},{"x":529,"y":1419,"w":132,"h":101},{"x":529,"y":1318,"w":132,"h":101},{"x":398,"y":1217,"w":132,"h":101},{"x":133,"y":604,"w":133,"h":101},{"x":133,"y":1006,"w":133,"h":101},{"x":398,"y":888,"w":132,"h":115},{"x":398,"y":757,"w":132,"h":131},{"x":398,"y":656,"w":132,"h":101},{"x":398,"y":555,"w":132,"h":101},{"x":398,"y":454,"w":132,"h":101},{"x":133,"y":1309,"w":133,"h":101},{"x":133,"y":1107,"w":133,"h":101},{"x":794,"y":838,"w":132,"h":101},{"x":398,"y":0,"w":132,"h":116},{"x":397,"y":1916,"w":132,"h":101},{"x":397,"y":1803,"w":132,"h":113},{"x":794,"y":0,"w":132,"h":101},{"x":793,"y":1471,"w":132,"h":101},{"x":0,"y":0,"w":133,"h":101},{"x":0,"y":468,"w":133,"h":101},{"x":662,"y":968,"w":132,"h":99},{"x":662,"y":101,"w":132,"h":101},{"x":662,"y":202,"w":132,"h":101},{"x":661,"y":1383,"w":132,"h":113},{"x":661,"y":1496,"w":132,"h":101},{"x":133,"y":705,"w":133,"h":101},{"x":0,"y":1338,"w":133,"h":101},{"x":530,"y":628,"w":132,"h":101},{"x":266,"y":436,"w":132,"h":99},{"x":529,"y":1924,"w":132,"h":101},{"x":398,"y":1116,"w":132,"h":101},{"x":398,"y":1003,"w":132,"h":113},{"x":266,"y":0,"w":132,"h":101},{"x":133,"y":101,"w":133,"h":101},{"x":133,"y":0,"w":133,"h":101},{"x":265,"y":1713,"w":132,"h":99},{"x":397,"y":1702,"w":132,"h":101},{"x":265,"y":1511,"w":132,"h":101},{"x":265,"y":1410,"w":132,"h":101},{"x":266,"y":737,"w":132,"h":101},{"x":133,"y":402,"w":133,"h":101},{"x":133,"y":503,"w":133,"h":101},{"x":265,"y":1812,"w":132,"h":99},{"x":265,"y":1612,"w":132,"h":101},{"x":133,"y":1612,"w":132,"h":101},{"x":133,"y":1713,"w":132,"h":133},{"x":133,"y":1410,"w":132,"h":101},{"x":133,"y":1511,"w":132,"h":101},{"x":133,"y":905,"w":133,"h":101},{"x":133,"y":806,"w":133,"h":99},{"x":266,"y":101,"w":132,"h":101},{"x":266,"y":202,"w":132,"h":101},{"x":265,"y":1911,"w":132,"h":101},{"x":133,"y":1846,"w":132,"h":133},{"x":133,"y":301,"w":133,"h":101},{"x":133,"y":202,"w":133,"h":99},{"x":398,"y":220,"w":132,"h":133},{"x":398,"y":353,"w":132,"h":101},{"x":266,"y":535,"w":132,"h":101},{"x":529,"y":1823,"w":132,"h":101},{"x":0,"y":1641,"w":133,"h":101},{"x":0,"y":1540,"w":133,"h":101},{"x":266,"y":303,"w":132,"h":133},{"x":266,"y":636,"w":132,"h":101},{"x":530,"y":527,"w":132,"h":101},{"x":0,"y":1136,"w":133,"h":101},{"x":266,"y":967,"w":132,"h":101},{"x":266,"y":838,"w":132,"h":129},{"x":266,"y":1169,"w":132,"h":101},{"x":0,"y":670,"w":133,"h":99},{"x":266,"y":1068,"w":132,"h":101},{"x":397,"y":1371,"w":132,"h":129},{"x":662,"y":867,"w":132,"h":101},{"x":266,"y":1270,"w":132,"h":101},{"x":397,"y":1601,"w":132,"h":101},{"x":397,"y":1500,"w":132,"h":101}],"cats":{"base_yellow":[29,22],"base_red":[1,2,18,25,26,36,40,41,30,33,34,46,17,9,10,123,113,92,99,106],"base_white":[12,20,11,35,42,27,28,37,93,107,116,117,114,101,100,115,125,124,122,109,108,85,19,3,4],"base_brown":[21,14],"mid_yellow":[44,39,51,48],"mid_red":[16,23,49,54,45,52],"mid_white":[8,15,31,56,55,53,50,24],"mid_brown":[0,7,32,43,38,47],"roofs":[60,61,62,63,64,65,66,67,68,69,70,71,83,82,81,80,79,78,77,76,75,74,73,72,84,86,87,88,89,90,91,94,95,105,104,103,102,98,97,96,110,111,118,119,128,127,126,112,121,120,13,6,5,57,58,59],"st_v":[56,65,85,84,81,44,0,99,63,50,3,112],"st_h":[57,58,64,77,73,92,91,70,71,36,6,2,106],"st_cross":[89,82]}};
+
+const CONFIG = { isoW: 132, isoH: 66 };
+
+// --- CAR DATA ---
+const CAR_DATA = {
+    SE: [
+        {x:37, y:151, w:35, h:35}, {x:591, y:152, w:32, h:27}, 
+        {x:623, y:151, w:32, h:26}, {x:38, y:36, w:35, h:33}
+    ],
+    SW: [
+        {x:38, y:0, w:35, h:36}, {x:236, y:452, w:33, h:27}, 
+        {x:623, y:336, w:32, h:26}, {x:38, y:69, w:35, h:33}
+    ]
+};
+
+// NEW BUILDING ORDER: 1/1, 2/1, 1/2, 3/1, 1/3, 3/2, 2/3, 3/3
+const BUILDING_ORDER_3x3 = [
+    {x:0, y:0}, // 1/1
+    {x:1, y:0}, // 2/1
+    {x:0, y:1}, // 1/2
+    {x:2, y:0}, // 3/1
+    {x:0, y:2}, // 1/3
+    {x:2, y:1}, // 3/2
+    {x:1, y:2}, // 2/3
+    {x:2, y:2}  // 3/3
+];
+
+// --- SPRITE PRELOADER ---
+const SpriteCache = {
+    loaded: false,
+    images: {},
+    
+    preload() {
+        return new Promise((resolve, reject) => {
+            const urls = [
+                'https://raw.githubusercontent.com/moinmaxtech/lesestadt/main/buildingTiles_sheet.png',
+                'https://raw.githubusercontent.com/moinmaxtech/lesestadt/main/cityTiles_sheet.png',
+                'https://raw.githubusercontent.com/moinmaxtech/lesestadt/main/sheet_allCars.png'
+            ];
+            
+            let loadedCount = 0;
+            const totalImages = urls.length;
+            
+            urls.forEach(url => {
+                const img = new Image();
+                img.onload = () => {
+                    loadedCount++;
+                    this.images[url] = img;
+                    if (loadedCount === totalImages) {
+                        this.loaded = true;
+                        console.log('✅ Alle Sprites geladen');
+                        resolve();
+                    }
+                };
+                img.onerror = () => {
+                    console.warn('⚠️ Sprite konnte nicht geladen werden:', url);
+                    loadedCount++;
+                    if (loadedCount === totalImages) {
+                        this.loaded = true;
+                        resolve(); // Continue anyway
+                    }
+                };
+                img.src = url;
+            });
+        });
+    }
+};
+
+// --- CONFETTI SYSTEM ---
+const Confetti = {
+    canvas: null,
+    ctx: null,
+    particles: [],
+    animationId: null,
+    
+    init() {
+        this.canvas = document.getElementById('confetti-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+    },
+    
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    },
+    
+    celebrate() {
+        this.canvas.style.display = 'block';
+        this.particles = [];
+        
+        const colors = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#e67e22'];
+        
+        // Create 150 particles
+        for (let i = 0; i < 150; i++) {
+            this.particles.push({
+                x: Math.random() * this.canvas.width,
+                y: -20,
+                vx: (Math.random() - 0.5) * 6,
+                vy: Math.random() * 3 + 2,
+                rotation: Math.random() * 360,
+                rotationSpeed: (Math.random() - 0.5) * 10,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                size: Math.random() * 8 + 4,
+                gravity: 0.15
+            });
+        }
+        
+        this.animate();
+        
+        // Stop after 5 seconds
+        setTimeout(() => this.stop(), 5000);
+    },
+    
+    animate() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.particles.forEach((p, index) => {
+            p.vy += p.gravity;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rotation += p.rotationSpeed;
+            
+            // Remove particles that fell off screen
+            if (p.y > this.canvas.height + 20) {
+                this.particles.splice(index, 1);
+                return;
+            }
+            
+            this.ctx.save();
+            this.ctx.translate(p.x, p.y);
+            this.ctx.rotate(p.rotation * Math.PI / 180);
+            this.ctx.fillStyle = p.color;
+            this.ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+            this.ctx.restore();
+        });
+        
+        if (this.particles.length > 0) {
+            this.animationId = requestAnimationFrame(() => this.animate());
+        } else {
+            this.stop();
+        }
+    },
+    
+    stop() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        this.canvas.style.display = 'none';
+        this.particles = [];
+    }
+};
+
+// --- APP ---
+const app = {
+    state: { 
+        buildings: [], tickets: [], history: [], 
+        settings: { goal: 3, timer: 10, baseH: 77, floorH: 34, roofH: -1, globalY: 8, spacing: 0, carY: -20, laneSE: -20, laneSW: -160, carSpeed: 2, showCars: true }, 
+        cam: { x: 0, y: 0, zoom: 1 },
+        atlasBuild: [], atlasRoad: [], cats: {}
+    },
+    timer: { obj: null, left: 0, running: false, wakeLock: null },
+    roadTiles: [],
+    previewBuilding: null,
+    cityRendered: false,
+    
+    // VIEW DATE FOR CALENDAR
+    viewDate: new Date(),
+    calDate: new Date(),
+    
+    // AUDIO CONTEXT FOR ALARM
+    audioContext: null,
+
+    async init() {
+        try {
+            // Initialize confetti
+            Confetti.init();
+            
+            // Preload sprites
+            await SpriteCache.preload();
+            
+            const saved = localStorage.getItem('LeseStadt_v180');
+            if(saved) {
+                this.state = JSON.parse(saved);
+                if(this.state.settings.showCars === undefined) this.state.settings.showCars = true;
+                
+                this.state.settings.laneSE = -20;
+                this.state.settings.laneSW = -160; 
+                this.state.settings.carSpeed = 2;
+                this.state.settings.carY = -20;
+            } else {
+                this.state = JSON.parse(JSON.stringify(USER_DATA));
+            }
+            if(!this.state.tickets) this.state.tickets = [];
+            
+            // TIMER INIT
+            if(this.state.settings.timer) {
+                this.timer.left = this.state.settings.timer * 60;
+            } else {
+                this.timer.left = 600;
+            }
+            
+            this.viewDate = new Date();
+            this.calDate = new Date();
+
+            this.initInput();
+            
+            const chkTraffic = document.getElementById('chk-traffic');
+            if(chkTraffic) chkTraffic.checked = this.state.settings.showCars;
+
+            // Generate preview building structure
+            this.generatePreviewBuilding();
+            
+            this.renderLogbook();
+            this.updateUI();
+            this.initTraffic();
+            
+            // Handle page visibility for wake lock
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && this.timer.running) {
+                    this.requestWakeLock();
+                }
+            });
+            
+            // Fullscreen change handler
+            document.addEventListener('fullscreenchange', () => this.updateFullscreenIcon());
+            document.addEventListener('webkitfullscreenchange', () => this.updateFullscreenIcon());
+            
+            setTimeout(() => {
+                 const cars = document.getElementsByClassName('car');
+                 if(cars.length === 0) this.forceSpawnCar();
+            }, 1000);
+
+        } catch(e) {
+            alert("FEHLER BEIM START: " + e.message);
+            console.error(e);
+        }
+    },
+
+    // --- GET BUILDING POSITION FROM COUNT (NEW ORDER) ---
+    getBuildingPosition(count) {
+        const blockIdx = Math.floor(count / 8); 
+        const houseIdx = count % 8;
+        
+        const k = Math.floor(Math.sqrt(blockIdx));
+        const rem = blockIdx - k * k;
+        let bx, by;
+        if (rem < k) { bx = k; by = rem; }
+        else { bx = 2 * k - rem; by = k; }
+        
+        const clusterX = bx * 4; 
+        const clusterY = by * 4;
+
+        const pos = BUILDING_ORDER_3x3[houseIdx];
+        const gx = clusterX + pos.x;
+        const gy = clusterY + pos.y;
+        
+        return {gx, gy};
+    },
+
+    // --- GENERATE PREVIEW BUILDING ---
+    generatePreviewBuilding() {
+        const cats = this.state.cats;
+        const colors = ['yellow', 'red', 'white', 'brown'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const bases = cats['base_' + color];
+        if(!bases || !bases.length) { 
+            console.warn("No base"); 
+            return; 
+        }
+
+        const count = this.state.buildings.length;
+        const {gx, gy} = this.getBuildingPosition(count);
+
+        const rnd = Math.random() * 100;
+        let floorCount = (rnd < 20) ? 0 : (rnd < 50 ? 1 : (rnd < 75 ? 2 : (rnd < 90 ? 3 : 4)));
+
+        const hMids = [];
+        const midSrc = cats['mid_' + color] || [];
+        for(let i=0; i<floorCount; i++) {
+            if(midSrc.length > 0) hMids.push(this.state.atlasBuild[midSrc[Math.floor(Math.random()*midSrc.length)]]);
+        }
+        const roofSrc = cats.roofs || [];
+        
+        this.previewBuilding = {
+            gx: gx, gy: gy,
+            parts: {
+                base: this.state.atlasBuild[bases[Math.floor(Math.random()*bases.length)]],
+                mids: hMids,
+                roof: roofSrc.length > 0 ? this.state.atlasBuild[roofSrc[Math.floor(Math.random()*roofSrc.length)]] : null
+            }
+        };
+    },
+
+    // --- DATE NAV ---
+    changeViewDate(offset) {
+        this.viewDate.setDate(this.viewDate.getDate() + offset);
+        const today = new Date();
+        if (this.viewDate > today) this.viewDate = today;
+        this.updateUI();
+    },
+    
+    changeMonth(offset) {
+        this.calDate.setMonth(this.calDate.getMonth() + offset);
+        this.renderLogbook();
+    },
+
+    // --- CENTER VIEW ---
+    centerView() {
+        this.state.cam.x = 0;
+        this.state.cam.y = 0;
+        this.state.cam.zoom = 1;
+        this.updateCam(true);
+    },
+    
+    // --- FULLSCREEN ---
+    toggleFullscreen() {
+        const elem = document.documentElement;
+        
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            // Enter fullscreen
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            }
+        } else {
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+        }
+    },
+    
+    updateFullscreenIcon() {
+        const icon = document.getElementById('fullscreen-icon');
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+            icon.textContent = '⛶'; // Exit fullscreen icon
+        } else {
+            icon.textContent = '⛶'; // Enter fullscreen icon
+        }
+    },
+    
+    // --- ALARM SOUND ---
+    playAlarm() {
+        try {
+            // Vibration if available
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200, 100, 200]);
+            }
+            
+            // Create audio context if needed
+            if (!this.audioContext) {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const ctx = this.audioContext;
+            const now = ctx.currentTime;
+            
+            // Play 3 beeps
+            for (let i = 0; i < 3; i++) {
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                oscillator.frequency.value = 880; // A5 note
+                oscillator.type = 'sine';
+                
+                const startTime = now + (i * 0.3);
+                gainNode.gain.setValueAtTime(0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+                
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.2);
+            }
+        } catch (e) {
+            console.error("Alarm sound error:", e);
+        }
+    },
+    
+    // --- WAKE LOCK ---
+    async requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) {
+                this.timer.wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Wake Lock aktiviert');
+                
+                this.timer.wakeLock.addEventListener('release', () => {
+                    console.log('Wake Lock freigegeben');
+                });
+            }
+        } catch (err) {
+            console.error('Wake Lock Fehler:', err);
+        }
+    },
+    
+    async releaseWakeLock() {
+        if (this.timer.wakeLock) {
+            try {
+                await this.timer.wakeLock.release();
+                this.timer.wakeLock = null;
+                console.log('Wake Lock manuell freigegeben');
+            } catch (err) {
+                console.error('Wake Lock Release Fehler:', err);
+            }
+        }
+    },
+
+    // --- TIMER LOGIC ---
+    toggleTimer() {
+        const btn = document.getElementById('btn-timer');
+        
+        if (this.timer.running) {
+            // PAUSE
+            clearInterval(this.timer.obj);
+            this.timer.running = false;
+            this.releaseWakeLock();
+            this.updateUI(); 
+        } else {
+            // START / RESUME
+            if (this.timer.left <= 0) {
+                 this.timer.left = this.state.settings.timer * 60;
+            }
+            
+            this.timer.running = true;
+            this.requestWakeLock();
+            this.updateUI();
+            
+            this.timer.obj = setInterval(() => {
+                if (this.timer.left <= 0) {
+                    this.timer.left = 0;
+                    clearInterval(this.timer.obj);
+                    this.timer.running = false;
+                    this.releaseWakeLock();
+                    this.updateUI();
+                    
+                    // PLAY ALARM
+                    this.playAlarm();
+                    
+                    // AUTO FINISH
+                    this.toggleDay();
+                    alert("⏰ Zeit abgelaufen! Einheit wurde erfasst.");
+                    
+                    return;
+                }
+                
+                this.timer.left--;
+                this.updateUI();
+            }, 1000);
+        }
+    },
+
+    toggleDay() {
+        const dateStr = this.viewDate.toLocaleDateString();
+        const hasRead = this.state.history.includes(dateStr);
+        const isToday = dateStr === new Date().toLocaleDateString();
+
+        if (hasRead) {
+            // UNDO
+            this.state.history = this.state.history.filter(d => d !== dateStr);
+            if (this.state.progress > 0) this.state.progress--;
+        } else {
+            // DO
+            this.state.history.push(dateStr);
+            this.state.progress++;
+            
+            if (this.state.progress >= this.state.settings.goal) {
+                // GOAL REACHED!
+                const todayStr = new Date().toLocaleDateString();
+                this.state.tickets.push({ date: todayStr, used: false });
+                this.buildHouse();
+                
+                this.state.progress = 0;
+                
+                // Generate new preview for next building
+                this.generatePreviewBuilding();
+                
+                // CELEBRATE with confetti!
+                Confetti.celebrate();
+                
+                if (isToday) {
+                    alert("🎉 Ziel erreicht! Haus gebaut.");
+                } else {
+                    alert("🎉 Durch Nachtragen Ziel erreicht! Haus gebaut.");
+                }
+            }
+        }
+        this.save();
+        this.renderLogbook();
+        this.cityRendered = false; // Force re-render
+        this.updateUI();
+    },
+
+    buildHouse() {
+        if (this.previewBuilding) {
+            this.state.buildings.push(JSON.parse(JSON.stringify(this.previewBuilding)));
+        }
+    },
+
+    renderCity() {
+        // Only render if not already rendered or if tab is active
+        if (this.cityRendered && document.getElementById('p-city').classList.contains('active')) {
+            return;
+        }
+        
+        const cam = document.getElementById('camera');
+        if(!cam) return;
+        const cars = Array.from(document.querySelectorAll('.car'));
+        cam.innerHTML = '';
+        cars.forEach(c => cam.appendChild(c));
+        this.roadTiles = [];
+        const s = this.state.settings;
+        const spacing = s.spacing || 0;
+        const stepW = (CONFIG.isoW + spacing) / 2;
+        const stepH = (CONFIG.isoH + (spacing/2)) / 2;
+        
+        let maxGX = 3, maxGY = 3; 
+        this.state.buildings.forEach(b => { maxGX = Math.max(maxGX, b.gx); maxGY = Math.max(maxGY, b.gy); });
+        
+        if (this.previewBuilding) {
+            maxGX = Math.max(maxGX, this.previewBuilding.gx);
+            maxGY = Math.max(maxGY, this.previewBuilding.gy);
+        }
+        
+        const gridX = Math.max(4, Math.ceil((maxGX+1)/4)*4); 
+        const gridY = Math.max(4, Math.ceil((maxGY+1)/4)*4);
+        
+        const roads = { v: this.state.cats.st_v||[], h: this.state.cats.st_h||[], x: this.state.cats.st_cross||[] };
+        const Z_F = 100;
+
+        for(let gx=0; gx<gridX; gx++) {
+            for(let gy=0; gy<gridY; gy++) {
+                const left = (gx - gy) * stepW;
+                const top = (gx + gy) * stepH;
+                const tile = document.createElement('div');
+                tile.className = 'grid-tile';
+                const isSX = (gx % 4 === 3);
+                const isSY = (gy % 4 === 3);
+                if(!isSX && !isSY) tile.classList.add('grass');
+                tile.style.transform = `translate(${left}px, ${top}px)`;
+                cam.appendChild(tile);
+                if(isSX || isSY) {
+                    let list = [];
+                    if (isSX && isSY) list = roads.x; else if (isSX) list = roads.v; else list = roads.h;
+                    if(!list.length && roads.v && roads.v.length) list = roads.v;
+                    if (list.length > 0 && this.state.atlasRoad.length > 0) {
+                        const rndIdx = list[Math.floor(Math.random() * list.length)];
+                        if(this.state.atlasRoad[rndIdx]) {
+                            this.draw(cam, this.state.atlasRoad[rndIdx], left, top, (gx+gy)*Z_F, 'sheet-city', 0);
+                            const dir = (isSX && !isSY) ? 'SW' : 'SE';
+                            this.roadTiles.push({ gx, gy, left, top, dir: dir, isCross: (isSX&&isSY) });
+                        }
+                    }
+                }
+            }
+        }
+        
+        const all = [...this.state.buildings];
+        all.sort((a,b)=>(a.gx+a.gy)-(b.gx+b.gy));
+        all.forEach(obj => {
+            const l = (obj.gx - obj.gy) * stepW;
+            const t = (obj.gx + obj.gy) * stepH;
+            let z = (obj.gx + obj.gy) * Z_F + 10; 
+            let stackY = 0;
+            if(obj.parts.base) { this.draw(cam, obj.parts.base, l, t, z++, 'sheet-buildings building', stackY); stackY -= s.baseH; }
+            if(obj.parts.mids) { obj.parts.mids.forEach(m => { this.draw(cam, m, l, t, z++, 'sheet-buildings building', stackY); stackY -= s.floorH; }); }
+            if(obj.parts.roof) { this.draw(cam, obj.parts.roof, l, t, z++, 'sheet-buildings building', stackY - s.roofH); }
+        });
+        
+        if (this.state.progress > 0 && this.state.progress < this.state.settings.goal && this.previewBuilding) {
+            const obj = this.previewBuilding;
+            const l = (obj.gx - obj.gy) * stepW;
+            const t = (obj.gx + obj.gy) * stepH;
+            let z = (obj.gx + obj.gy) * Z_F + 10;
+            let stackY = 0;
+            
+            const progressPct = this.state.progress / this.state.settings.goal;
+            
+            let totalHeight = 0;
+            if (obj.parts.base) totalHeight += s.baseH;
+            if (obj.parts.mids) totalHeight += obj.parts.mids.length * s.floorH;
+            if (obj.parts.roof) totalHeight += Math.abs(s.roofH);
+            
+            const revealHeight = totalHeight * progressPct;
+            let currentHeight = 0;
+            
+            if (obj.parts.base) {
+                const partHeight = s.baseH;
+                const clipPct = Math.min(100, Math.max(0, ((revealHeight - currentHeight) / partHeight) * 100));
+                this.drawWithClip(cam, obj.parts.base, l, t, z++, 'sheet-buildings building preview-building preview-part', stackY, clipPct);
+                stackY -= s.baseH;
+                currentHeight += partHeight;
+            }
+            
+            if (obj.parts.mids) {
+                obj.parts.mids.forEach(m => {
+                    const partHeight = s.floorH;
+                    const clipPct = Math.min(100, Math.max(0, ((revealHeight - currentHeight) / partHeight) * 100));
+                    this.drawWithClip(cam, m, l, t, z++, 'sheet-buildings building preview-building preview-part', stackY, clipPct);
+                    stackY -= s.floorH;
+                    currentHeight += partHeight;
+                });
+            }
+            
+            if (obj.parts.roof) {
+                const partHeight = Math.abs(s.roofH);
+                const clipPct = Math.min(100, Math.max(0, ((revealHeight - currentHeight) / partHeight) * 100));
+                this.drawWithClip(cam, obj.parts.roof, l, t, z++, 'sheet-buildings building preview-building preview-part', stackY - s.roofH, clipPct);
+            }
+        }
+        
+        document.getElementById('ui-count').innerText = this.state.buildings.length;
+        this.updateCam();
+        this.cityRendered = true;
+    },
+
+    draw(con, sprite, l, t, z, css, yShift) {
+        if(!sprite) return;
+        const el = document.createElement('div');
+        el.className = 'iso-obj ' + css;
+        el.style.width = sprite.w + 'px'; el.style.height = sprite.h + 'px';
+        el.style.backgroundPosition = `-${sprite.x}px -${sprite.y}px`;
+        const globY = this.state.settings.globalY || 0;
+        const fx = l - (sprite.w/2);
+        const fy = t - (sprite.h - 25) + yShift + globY;
+        el.style.transform = `translate(${fx}px, ${fy}px)`;
+        el.style.zIndex = z;
+        con.appendChild(el);
+    },
+    
+    drawWithClip(con, sprite, l, t, z, css, yShift, clipPct) {
+        if(!sprite) return;
+        const el = document.createElement('div');
+        el.className = 'iso-obj ' + css;
+        el.style.width = sprite.w + 'px'; 
+        el.style.height = sprite.h + 'px';
+        el.style.backgroundPosition = `-${sprite.x}px -${sprite.y}px`;
+        
+        const clipTop = 100 - clipPct;
+        el.style.clipPath = `polygon(0 ${clipTop}%, 100% ${clipTop}%, 100% 100%, 0 100%)`;
+        
+        const globY = this.state.settings.globalY || 0;
+        const fx = l - (sprite.w/2);
+        const fy = t - (sprite.h - 25) + yShift + globY;
+        el.style.transform = `translate(${fx}px, ${fy}px)`;
+        el.style.zIndex = z;
+        con.appendChild(el);
+    },
+
+    initTraffic() { setInterval(() => this.forceSpawnCar(false), 2000); },
+
+    forceSpawnCar(isManual = true) {
+        if (!this.state.settings.showCars) {
+            document.querySelectorAll('.car').forEach(c => c.remove());
+            return;
+        }
+
+        if(!this.roadTiles || !this.roadTiles.length) return;
+        if(document.getElementsByClassName('car').length > 6) return;
+
+        const startTile = this.roadTiles[Math.floor(Math.random()*this.roadTiles.length)];
+        let roadStrip = [];
+        if (startTile.isCross) {
+             const pickDir = Math.random() > 0.5 ? 'SE' : 'SW';
+             roadStrip = this.roadTiles.filter(t => (pickDir==='SE' ? t.gy === startTile.gy : t.gx === startTile.gx));
+             startTile.dir = pickDir;
+        } else if (startTile.dir === 'SE') {
+             roadStrip = this.roadTiles.filter(t => t.gy === startTile.gy);
+        } else {
+             roadStrip = this.roadTiles.filter(t => t.gx === startTile.gx);
+        }
+        roadStrip.sort((a,b) => (startTile.dir === 'SE') ? (a.gx - b.gx) : (a.gy - b.gy));
+        if(roadStrip.length === 0) return;
+
+        const firstTile = roadStrip[0];
+        const lastTile = roadStrip[roadStrip.length-1];
+        
+        const cam = document.getElementById('camera');
+        const list = (startTile.dir === 'SE') ? CAR_DATA.SE : CAR_DATA.SW;
+        const sprite = list[Math.floor(Math.random()*list.length)];
+
+        const car = document.createElement('div');
+        car.className = 'car';
+        car.style.width = sprite.w + 'px';
+        car.style.height = sprite.h + 'px';
+        car.style.backgroundPosition = `-${sprite.x}px -${sprite.y}px`;
+        
+        const offset = 100; 
+        const tW = CONFIG.isoW; 
+        const laneShiftX = (startTile.dir === 'SE') ? this.state.settings.laneSE : this.state.settings.laneSW;
+        
+        const firstX = firstTile.left + (tW/2);
+        const firstY = firstTile.top;
+        const lastX = lastTile.left + (tW/2);
+        const lastY = lastTile.top;
+
+        let vx = lastX - firstX;
+        let vy = lastY - firstY;
+
+        let startX = firstX + laneShiftX;
+        let startY = firstY;
+
+        const extend = -40;
+        
+        const len = Math.sqrt(vx*vx + vy*vy);
+        const ux = vx / len; 
+        const uy = vy / len;
+
+        startX -= (ux * offset);
+        startY -= (uy * offset);
+
+        const totalLen = len + offset + extend;
+        
+        const endX = startX + (ux * totalLen);
+        const endY = startY + (uy * totalLen);
+
+        car.style.transform = `scaleX(1)`;
+        
+        const lift = this.state.settings.carY;
+        car.style.left = '0'; 
+        car.style.top = '0';
+        car.style.transform = `translate3d(${startX}px, ${startY + lift}px, 0) scaleX(1)`;
+        
+        cam.appendChild(car);
+
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const speedVal = this.state.settings.carSpeed || 2;
+        const speedFactor = Math.max(1, 21 - speedVal); 
+        const duration = dist * speedFactor;
+
+        let startTime = null;
+
+        function animate(time) {
+            if (!startTime) startTime = time;
+            const progress = (time - startTime) / duration;
+
+            if (progress < 1) {
+                const curX = startX + (dx * progress);
+                const curY = (startY + lift) + (dy * progress);
+                
+                const lh = 0.3; 
+                const zo = 15; 
+                
+                const curGx = firstTile.gx + (lastTile.gx - firstTile.gx) * (progress + lh); 
+                const curGy = firstTile.gy + (lastTile.gy - firstTile.gy) * (progress + lh);
+                const zIndex = Math.floor((curGx + curGy) * 100) + zo;
+
+                let transformStr = `translate3d(${curX}px, ${curY}px, 0)`;
+                if (startTile.dir === 'SW') transformStr += ` scaleX(1)`; 
+                
+                car.style.transform = transformStr;
+                car.style.zIndex = zIndex;
+
+                requestAnimationFrame(animate);
+            } else {
+                car.remove();
+            }
+        }
+        requestAnimationFrame(animate);
+    },
+
+    renderLogbook() {
+        // --- STATISTIKEN BERECHNEN ---
+        const totalDays = this.state.history.length;
+        const totalMinutes = totalDays * this.state.settings.timer;
+        const totalHours = Math.floor(totalMinutes / 60);
+        const remainingMinutes = totalMinutes % 60;
+        const totalBuildings = this.state.buildings.length;
+        const usedTickets = this.state.tickets.filter(t => t.used).length;
+        const openTickets = this.state.tickets.filter(t => !t.used).length;
+        
+        // --- STATISTIKEN ANZEIGEN ---
+        document.getElementById('stat-days').innerText = totalDays;
+        
+        if (totalHours > 0) {
+            if (remainingMinutes > 0) {
+                document.getElementById('stat-time').innerText = `${totalHours}h ${remainingMinutes}m`;
+            } else {
+                document.getElementById('stat-time').innerText = `${totalHours}h`;
+            }
+        } else {
+            document.getElementById('stat-time').innerText = `${remainingMinutes}m`;
+        }
+        
+        document.getElementById('stat-buildings').innerText = totalBuildings;
+        document.getElementById('stat-used-tickets').innerText = usedTickets;
+        document.getElementById('tickets-count').innerText = openTickets === 1 ? '1 Ticket offen' : `${openTickets} offen`;
+        
+        // --- TICKETS RENDERN ---
+        const ticketsGrid = document.getElementById('tickets-grid');
+        if (!ticketsGrid) return;
+        ticketsGrid.innerHTML = '';
+        
+        const openTicketsList = this.state.tickets.filter(t => !t.used);
+        
+        if (openTicketsList.length === 0) {
+            ticketsGrid.innerHTML = `
+                <div class="no-tickets">
+                    <div class="no-tickets-icon">🎫</div>
+                    <div>Keine offenen Tickets</div>
+                    <div style="font-size: 12px; margin-top: 8px; color: #aaa;">
+                        Erreiche dein Tagesziel um Tickets zu sammeln!
+                    </div>
+                </div>
+            `;
+        } else {
+            openTicketsList.forEach((ticket, i) => {
+                const el = document.createElement('div');
+                el.className = 'ticket-item';
+                
+                // Format date
+                const dateStr = ticket.date || '';
+                const dateShort = dateStr.split('.').slice(0, 2).join('.');
+                
+                el.innerHTML = `
+                    <div class="ticket-emoji">🎫</div>
+                    <div class="ticket-date">${dateShort}</div>
+                `;
+                
+                el.onclick = () => {
+                    if (confirm('Möchtest du dieses Ticket einlösen?\n\n💡 Tipp: Sammle Tickets für besondere Belohnungen!')) {
+                        // Find original ticket index
+                        const originalIndex = this.state.tickets.findIndex(t => 
+                            !t.used && t.date === ticket.date
+                        );
+                        if (originalIndex >= 0) {
+                            this.state.tickets[originalIndex].used = true;
+                            this.save();
+                            this.renderLogbook();
+                        }
+                    }
+                };
+                
+                ticketsGrid.appendChild(el);
+            });
+        }
+        
+        // --- KALENDER RENDERN ---
+        const c = document.getElementById('cal-grid');
+        if (!c) return;
+        c.innerHTML = '';
+        
+        const year = this.calDate.getFullYear();
+        const month = this.calDate.getMonth();
+        
+        const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+        document.getElementById('cal-month-display').innerText = `${monthNames[month]} ${year}`;
+        
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        const startOffset = (firstDay === 0) ? 6 : firstDay - 1;
+        
+        for (let j = 0; j < startOffset; j++) {
+            const d = document.createElement('div');
+            d.className = 'cal-day empty';
+            c.appendChild(d);
+        }
+        
+        const today = new Date();
+        
+        for (let i = 1; i <= daysInMonth; i++) {
+            const d = document.createElement('div');
+            d.className = 'cal-day';
+            
+            const dStr = i + '.' + (month + 1) + '.' + year;
+            
+            if (this.state.history.includes(dStr)) {
+                d.classList.add('read');
+            }
+            
+            if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                d.classList.add('today');
+            }
+            
+            const hasTicket = this.state.tickets.some(t => t.date === dStr && !t.used);
+            
+            let html = `<span>${i}</span>`;
+            if (hasTicket) {
+                html += `<div class="day-content">🎫</div>`;
+            }
+            
+            d.innerHTML = html;
+            c.appendChild(d);
+        }
+    },
+
+    initInput() {
+        const vp = document.getElementById('viewport');
+        let isDown=false, lx, ly;
+        
+        let initialPinchDist = null;
+        let initialZoom = 1;
+        
+        vp.ontouchstart = e => {
+            if (e.target.closest('button') || e.target.closest('input')) return;
+
+            if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                initialPinchDist = Math.sqrt(dx*dx + dy*dy);
+                initialZoom = this.state.cam.zoom;
+            } else {
+                isDown = true;
+                lx = e.touches[0].clientX;
+                ly = e.touches[0].clientY;
+            }
+        };
+
+        vp.ontouchmove = e => {
+            if (e.touches.length === 2 && initialPinchDist) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const currentDist = Math.sqrt(dx*dx + dy*dy);
+                
+                const scale = currentDist / initialPinchDist;
+                this.state.cam.zoom = Math.max(0.2, Math.min(initialZoom * scale, 3));
+                this.updateCam();
+            } else if (isDown) {
+                const cx = e.touches[0].clientX;
+                const cy = e.touches[0].clientY;
+                this.state.cam.x += cx - lx;
+                this.state.cam.y += cy - ly;
+                lx = cx; 
+                ly = cy;
+                this.updateCam();
+            }
+        };
+
+        const endDrag = () => { isDown = false; initialPinchDist = null; };
+
+        vp.onmousedown = e => { 
+            if(e.target.closest('button')) return;
+            isDown = true; lx = e.clientX; ly = e.clientY; 
+        };
+        window.onmouseup = endDrag;
+        window.ontouchend = endDrag;
+        
+        window.onmousemove = e => { 
+            if(isDown) { 
+                this.state.cam.x += e.clientX-lx; 
+                this.state.cam.y += e.clientY-ly; 
+                lx=e.clientX; ly=e.clientY; 
+                this.updateCam(); 
+            }
+        };
+        
+        vp.addEventListener('wheel', e => { e.preventDefault(); this.state.cam.zoom = Math.max(0.2, Math.min(this.state.cam.zoom + (e.deltaY > 0 ? -0.1 : 0.1), 3)); this.updateCam(); });
+    },
+
+    updateCam(animate = false) { 
+        const camEl = document.getElementById('camera');
+        if (animate) {
+            camEl.style.transition = 'transform 0.5s ease-out';
+            setTimeout(() => { camEl.style.transition = ''; }, 500);
+        }
+        camEl.style.transform = `translate(${this.state.cam.x}px, ${this.state.cam.y}px) scale(${this.state.cam.zoom})`; 
+    },
+
+    tab(id, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(btn) btn.classList.add('active');
+        if(id==='p-city') this.renderCity();
+        if(id==='p-cal') this.renderLogbook();
+    },
+
+    updateUI() {
+        const dateStr = this.viewDate.toLocaleDateString();
+        const isToday = dateStr === new Date().toLocaleDateString();
+        const hasRead = this.state.history.includes(dateStr);
+        const btnTimer = document.getElementById('btn-timer');
+        const btnAction = document.getElementById('btn-action');
+        const timerBox = document.getElementById('timer-box');
+        const wakeLockHint = document.getElementById('wake-lock-hint');
+        
+        document.getElementById('date-display').innerText = isToday ? "Heute" : dateStr;
+        document.getElementById('btn-next-day').disabled = isToday;
+
+        if (isToday) {
+            timerBox.classList.remove('hidden');
+            btnTimer.classList.remove('d-none');
+        } else {
+            timerBox.classList.add('hidden');
+            btnTimer.classList.add('d-none');
+        }
+
+        const totalSec = Math.max(0, this.timer.left);
+        const m = Math.floor(totalSec/60).toString().padStart(2, '0');
+        const s = (totalSec%60).toString().padStart(2, '0');
+        document.getElementById('timer-display').innerText = `${m}:${s}`;
+        
+        if(this.timer.running) {
+            btnTimer.innerText = "Pause";
+            btnTimer.classList.add('pause');
+            if(wakeLockHint) wakeLockHint.style.display = 'block';
+        } else {
+            btnTimer.innerText = (totalSec < (this.state.settings.timer*60) && totalSec > 0) ? "Weiter" : "Timer starten";
+            btnTimer.classList.remove('pause');
+            if(wakeLockHint) wakeLockHint.style.display = 'none';
+        }
+
+        document.getElementById('ui-prog').innerText = this.state.progress;
+        document.getElementById('ui-goal').innerText = this.state.settings.goal;
+        const pct = Math.min(100, (this.state.progress / this.state.settings.goal) * 100);
+        document.getElementById('prog-bar').style.width = pct + '%';
+        
+        if(hasRead) {
+            btnAction.innerText = isToday ? "✅ Heute erledigt" : `✅ Am ${dateStr.slice(0,5)} erledigt`;
+            btnAction.classList.add('done');
+        } else {
+            btnAction.innerText = isToday ? "Einheit erfassen" : "Nachtragen";
+            btnAction.classList.remove('done');
+        }
+    },
+
+    saveSettings() { 
+        this.state.settings.goal=parseInt(document.getElementById('inp-goal').value); 
+        this.state.settings.timer=parseInt(document.getElementById('inp-time').value); 
+        this.state.settings.showCars = document.getElementById('chk-traffic').checked;
+        this.save(); 
+        
+        if(!this.state.settings.showCars) {
+             document.querySelectorAll('.car').forEach(c => c.remove());
+        }
+        
+        alert("Gespeichert");
+    },
+    save() { localStorage.setItem('LeseStadt_v180', JSON.stringify(this.state)); },
+    reset() { if(confirm("ALLES löschen?")) { localStorage.removeItem('LeseStadt_v180'); location.reload(); } },
+    loadDefaults() { if(confirm("Überschreiben?")) { this.state = JSON.parse(JSON.stringify(USER_DATA)); this.save(); location.reload(); }},
+    loadBackup() { try { this.state = JSON.parse(document.getElementById('inp-backup').value); this.save(); location.reload(); } catch(e) { alert("Fehler"); } },
+    copyBackup() { navigator.clipboard.writeText(JSON.stringify(this.state)); alert("Kopiert"); }
+};
+
+// START APP
+app.init();
+</script>
+</body>
+</html>
