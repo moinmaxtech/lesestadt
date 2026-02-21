@@ -1,8 +1,8 @@
-// Service Worker für Lese-Stadt v180
-const CACHE_NAME = 'lesestadt-v180';
+// Service Worker für Lese-Stadt v199
+const CACHE_NAME = 'lesestadt-v226';
 const urlsToCache = [
   './',
-  './Lese-Stadt-v180.html',
+  './Lese-Stadt-v226.html',
   'https://fonts.googleapis.com/css2?family=Roboto:wght@300;700&display=swap',
   'https://raw.githubusercontent.com/moinmaxtech/lesestadt/main/buildingTiles_sheet.png',
   'https://raw.githubusercontent.com/moinmaxtech/lesestadt/main/cityTiles_sheet.png',
